@@ -64,3 +64,12 @@ mount "$diskDrive$partitionEFI" /mnt/efi
 # install base
 pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_supplicant btrfs-progs man sudo sbctl
 
+genfstab -U /mnt >> /mnt/etc/fstab
+
+arch-chroot /mnt
+
+# setup timezone
+#ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
+#hwclock --systohc
+
+#locale-gen
