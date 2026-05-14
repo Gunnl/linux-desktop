@@ -1,5 +1,10 @@
 #!/bin/bash
 
+diskDrive="/dev/nvme0n1"
+partitionEFI="p1"
+partitionRoot="p2"
+diskPassword="password1234"
+
 if [ "$EUID" -ne 0 ]
 	then echo "must run as root"
 		exit
@@ -16,23 +21,26 @@ then
 	echo "Aborting!"
 	exit 0
 fi
-wipefs -a /dev/nvme0n1
-parted /dev/nvme0n1 --script mklabel gpt
-parted -a optimal /dev/nvme0n1 --script mkpart primary fat32 1 1000MB
-parted /dev/nvme0n1 --script set 1 esp on
-parted /dev/nvme0n1 --script set 1 boot on
-parted -a optimal /dev/nvme0n1 --script mkpart primary 1000MB 100%
+wipefs -a "$diskDrive"
+parted "$diskDrive" --script mklabel gpt
+parted -a optimal "$diskDrive$partitionEFI" --script mkpart primary fat32 1 1000MB
+parted "$diskDrive" --script set 1 esp on
+parted "$diskDrive" --script set 1 boot on
+parted -a optimal "$diskDrive" --script mkpart primary 1000MB 100%
 
-mkfs.fat -F 32 /dev/nvme0n1p1
+mkfs.fat -F 32 "$diskDrive$partitionEFI"
 
 # create file-based password
-dd if=/dev/urandom of=/root/secret.key bs=1024 count=2
-sudo chmod 0400 /root/secret.key
+#dd if=/dev/urandom of=/root/secret.key bs=1024 count=2
+#sudo chmod 0400 /root/secret.key
 
-cryptsetup luksFormat /dev/nvme0n1p2 /root/secret.key
-cryptsetup luksAddKey /dev/nvme0n1p2 /root/secret.key --key-file=/root/secret.key
+#cryptsetup luksFormat /dev/nvme0n1p2 /root/secret.key
+#cryptsetup luksAddKey /dev/nvme0n1p2 /root/secret.key --key-file=/root/secret.key
 
-cryptsetup luksOpen /dev/nvme0n1p2 root --key-file=/root/secret.key
+#cryptsetup luksOpen /dev/nvme0n1p2 root --key-file=/root/secret.key
+
+cryptsetup luksFormat --type luks2 "$diskDrive$partitionRoot" <<< "$diskPassword"
+cryptsetup open "$diskDrive$partitionRoot" root <<< "$diskPassword"
 
 mkfs.btrfs /dev/mapper/root
 
@@ -51,5 +59,8 @@ mount -o subvol=@swap /dev/mapper/root /mnt/swap
 
 # mount EFI partition
 mkdir -p /mnt/efi
-mount /dev/nvme0p1 /mnt/efi
+mount "$diskDrive$partitionEFI" /mnt/efi
+
+# install base
+pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_supplicant btrfs-progs man sudo sbctl
 
