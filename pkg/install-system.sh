@@ -5,6 +5,9 @@ if [ "$EUID" -ne 0 ]
 		exit
 fi
 
+# exit on any error
+set -e
+
 echo "****************************** installing system"
 echo "******************** partitioning disk"
 read -p "*** WARNING *** This will erase all your data! Do you wish to continue? (y/n): " response
@@ -18,12 +21,18 @@ parted /dev/nvme0n1 --script mklabel gpt
 parted -a optimal /dev/nvme0n1 --script mkpart primary fat32 1 1000MB
 parted /dev/nvme0n1 --script set 1 esp on
 parted /dev/nvme0n1 --script set 1 boot on
-parted -a optimal /dev/nvme0n1 --script mkpart primary btrfs 1000MB 100%
+parted -a optimal /dev/nvme0n1 --script mkpart primary 1000MB 100%
 
 mkfs.fat -F 32 /dev/nvme0n1p1
 
-crytpsetup luksFormat /dev/nvme0n1p2
-cryptsetup open /dev/nvme0n1p2 root
+# create file-based password
+dd if=/dev/urandom of=/root/secret.key bs=1024 count=2
+sudo chmod 0400 /root/secret.key
+
+crytpsetup luksFormat /dev/nvme0n1p2 /root/secret.key
+cryptsetup luksAddKey /dev/nvme0n1p2 /root/secret.key --key-file=/root/secret.key
+
+cryptsetup luksOpen /dev/nvme0n1p2 root --key-file=/root/secret.key
 
 mkfs.btrfs /dev/mapper/root
 
