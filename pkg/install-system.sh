@@ -23,7 +23,7 @@ then
 fi
 wipefs -a "$diskDrive"
 parted "$diskDrive" --script mklabel gpt
-parted -a optimal "$diskDrive$partitionEFI" --script mkpart primary fat32 1 1000MB
+parted -a optimal "$diskDrive" --script mkpart primary fat32 1 1000MB
 parted "$diskDrive" --script set 1 esp on
 parted "$diskDrive" --script set 1 boot on
 parted -a optimal "$diskDrive" --script mkpart primary 1000MB 100%
