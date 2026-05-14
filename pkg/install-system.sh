@@ -9,7 +9,7 @@ echo "****************************** installing system"
 echo "******************** partitioning disk"
 read -p "*** WARNING *** This will erase all your data! Do you wish to continue? (y/n): " response
 if ! [[ "$response" == "y" || "$response" == "Y" || "$response" == "yes" || "$response" == "Yes" || "$response" == "YES" ]]
-else
+then
 	echo "Aborting!"
 	exit 0
 fi
