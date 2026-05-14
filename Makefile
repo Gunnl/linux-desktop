@@ -1,5 +1,5 @@
 install-system:
 	# install Arch-Linux
-	echo "Arch Linux automation scripts"
+	@echo "Arch Linux automation scripts"
 	cd pkg && ./install-system.sh
-	echo "Install: done!"
+	@echo "Install: done!"
