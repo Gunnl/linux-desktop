@@ -29,7 +29,7 @@ mkfs.fat -F 32 /dev/nvme0n1p1
 dd if=/dev/urandom of=/root/secret.key bs=1024 count=2
 sudo chmod 0400 /root/secret.key
 
-crytpsetup luksFormat /dev/nvme0n1p2 /root/secret.key
+cryptsetup luksFormat /dev/nvme0n1p2 /root/secret.key
 cryptsetup luksAddKey /dev/nvme0n1p2 /root/secret.key --key-file=/root/secret.key
 
 cryptsetup luksOpen /dev/nvme0n1p2 root --key-file=/root/secret.key
