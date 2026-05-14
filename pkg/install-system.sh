@@ -82,46 +82,46 @@ pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_s
 genfstab -U /mnt >> /mnt/etc/fstab
 
 echo "******************** chrooting to new environment"
-arch-chroot /mnt bash -c '
+arch-chroot /mnt bash -c "
 
-echo "******************** setting timezone"
+echo \"******************** setting timezone\"
 # setup timezone
 ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
 hwclock --systohc
 
 # locale-gen
 sed -i 's/#en_US.UTF-8/en_US.UTF-8/g' /etc/locale.gen
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
+echo \"LANG=en_US.UTF-8\" > /etc/locale.conf
 
-echo "******************** configuring host"
+echo \"******************** configuring host\"
 # hostname configuration
-echo "$hostname" > /etc/hostname
-echo "127.0.1.1 $hostname.localdomain $hostname" >> /etc/hosts
+echo \"$hostname\" > /etc/hostname
+echo \"127.0.1.1 $hostname.localdomain $hostname\" >> /etc/hosts
 
-echo "******************** setting initial root password"
+echo \"******************** setting initial root password\"
 # set root password
-echo "$rootPassword" | passwd --stdin
+echo \"$rootPassword\" | passwd --stdin
 
-echo "******************** configuring mkinitcpio"
+echo \"******************** configuring mkinitcpio\"
 # configure mkinitcpio.conf
 sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
 
-echo "******************** configuring network"
+echo \"******************** configuring network\"
 # network configuration
-echo "[main]\ndns=dnsmasq" > /etc/NetworkManager/conf.d/dns.conf
-echo "cache-size=2000" > /etc/NetworkManager/dnsmasq.d/cache.conf
+echo \"[main]\ndns=dnsmasq\" > /etc/NetworkManager/conf.d/dns.conf
+echo \"cache-size=2000\" > /etc/NetworkManager/dnsmasq.d/cache.conf
 
-echo "******************** installing intel microcode"
+echo \"******************** installing intel microcode\"
 # install intel microcode
 pacman -S --noconfirm intel-ucode
 
-echo "******************** installing grub"
+echo \"******************** installing grub\"
 # install grub
 pacman -S --noconfirm grub
 grub-install --target=x86-pc
 grub-mkconfig -o /boot/grub/grub.cfg
 
-exit'
+exit"
 echo "******************** all done"
 exit
 
