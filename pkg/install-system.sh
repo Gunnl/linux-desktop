@@ -1,9 +1,12 @@
 #!/bin/bash
 
+hostname="archscape"
 diskDrive="/dev/nvme0n1"
 partitionEFI="p1"
 partitionRoot="p2"
+rootPassword="password1234"
 diskPassword="password1234"
+userLogin="aUser"
 
 if [ "$EUID" -ne 0 ]
 	then echo "must run as root"
@@ -63,7 +66,7 @@ mount "$diskDrive$partitionEFI" /mnt/efi
 
 pacman -Syy
 
-pacman -S reflector
+pacman -S --noconfirm reflector
 
 cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
 reflector -c "NL" -f 12 -l 10 -n 12 --save /etc/pacman.d/mirrorlist
@@ -76,7 +79,34 @@ genfstab -U /mnt >> /mnt/etc/fstab
 arch-chroot /mnt
 
 # setup timezone
-#ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
-#hwclock --systohc
+ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
+hwclock --systohc
 
-#locale-gen
+# locale-gen
+sed -i 's/#en_US.UTF-8//g' /etc/locale.gen
+echo "LANG=en_US.UTF-8"
+
+# hostname configuration
+echo "$hostname" > /etc/hostname
+echo "127.0.1.1 $hostname.localdomain $hostname" >> /etc/hosts
+
+# set root password
+passwd "$rootPassword" | passwd
+
+# configure mkinitcpio.conf
+sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
+
+# network configuration
+echo "[main]\ndns=dnsmasq" > /etc/NetworkManager/conf.d/dns.conf
+echo "cache-size=2000" > /etc/NetworkManager/dnsmasq.d/cache.conf
+
+# install intel microcode
+pacman -S --noconfirm intel-ucode
+
+# install grub
+pacman -S --noconfirm grub
+grub-install --target=x86-pc
+grub-mkconfig -o /boot/grub/grub.cfg
+
+exit
+
