@@ -33,7 +33,9 @@ parted -a optimal "$diskDrive" --script mkpart primary 1000MB 100%
 
 mkfs.fat -F 32 "$diskDrive$partitionEFI"
 
+echo "******************** Encrypting disk"
 # create file-based password
+
 #dd if=/dev/urandom of=/root/secret.key bs=1024 count=2
 #sudo chmod 0400 /root/secret.key
 
@@ -52,6 +54,7 @@ btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@swap
 
+echo "******************** mounting root"
 # unmount partition and mount volumes
 umount /mnt
 mount -o subvol=@ /dev/mapper/root /mnt
@@ -60,53 +63,64 @@ mkdir -p /mnt/swap
 mount -o subvol=@home /dev/mapper/root /mnt/home
 mount -o subvol=@swap /dev/mapper/root /mnt/swap
 
+echo "******************** mounting EFI"
 # mount EFI partition
 mkdir -p /mnt/efi
 mount "$diskDrive$partitionEFI" /mnt/efi
 
+echo "******************** selecting mirrors"
 pacman -Syy
-
 pacman -S --noconfirm reflector
 
 cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
 reflector -c "NL" -f 12 -l 10 -n 12 --save /etc/pacman.d/mirrorlist
 
+echo "******************** installing base"
 # install base
 pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_supplicant btrfs-progs man sudo sbctl
 
 genfstab -U /mnt >> /mnt/etc/fstab
 
+echo "******************** chrooting to new environment"
 arch-chroot /mnt
 
+echo "******************** setting timezone"
 # setup timezone
 ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
 hwclock --systohc
 
 # locale-gen
-sed -i 's/#en_US.UTF-8//g' /etc/locale.gen
-echo "LANG=en_US.UTF-8"
+sed -i 's/#en_US.UTF-8/en_US.UTF-8/g' /etc/locale.gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
+echo "******************** configuring host"
 # hostname configuration
 echo "$hostname" > /etc/hostname
 echo "127.0.1.1 $hostname.localdomain $hostname" >> /etc/hosts
 
+echo "******************** setting initial root password"
 # set root password
-passwd "$rootPassword" | passwd
+echo "$rootPassword" | passwd --stdin
 
+echo "******************** configuring mkinitcpio"
 # configure mkinitcpio.conf
 sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
 
+echo "******************** configuring network"
 # network configuration
 echo "[main]\ndns=dnsmasq" > /etc/NetworkManager/conf.d/dns.conf
 echo "cache-size=2000" > /etc/NetworkManager/dnsmasq.d/cache.conf
 
+echo "******************** installing intel microcode"
 # install intel microcode
 pacman -S --noconfirm intel-ucode
 
+echo "******************** installing grub"
 # install grub
 pacman -S --noconfirm grub
 grub-install --target=x86-pc
 grub-mkconfig -o /boot/grub/grub.cfg
 
+echo "******************** all done"
 exit
 
