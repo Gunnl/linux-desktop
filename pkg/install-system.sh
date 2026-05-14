@@ -82,7 +82,7 @@ pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_s
 genfstab -U /mnt >> /mnt/etc/fstab
 
 echo "******************** chrooting to new environment"
-arch-chroot /mnt
+arch-chroot /mnt bash -c '
 
 echo "******************** setting timezone"
 # setup timezone
@@ -121,6 +121,7 @@ pacman -S --noconfirm grub
 grub-install --target=x86-pc
 grub-mkconfig -o /boot/grub/grub.cfg
 
+exit'
 echo "******************** all done"
 exit
 
