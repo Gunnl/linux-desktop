@@ -61,6 +61,13 @@ mount -o subvol=@swap /dev/mapper/root /mnt/swap
 mkdir -p /mnt/efi
 mount "$diskDrive$partitionEFI" /mnt/efi
 
+pacman -Syy
+
+pacman -S reflector
+
+cp /etc/pacman.d/mirrorlist /etc/pacman-d/mirrorlist.bak
+reflector -c "NL" -f 12 -l 10 -n 12 --save /etc/pacman.d/mirrorlist
+
 # install base
 pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_supplicant btrfs-progs man sudo sbctl
 
