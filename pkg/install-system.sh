@@ -29,6 +29,7 @@ parted "$diskDrive" --script mklabel gpt
 parted -a optimal "$diskDrive" --script mkpart primary fat32 1 1000MB
 parted "$diskDrive" --script set 1 esp on
 parted "$diskDrive" --script set 1 boot on
+parted "$diskDrive" --script set 1 bios_grub on
 parted -a optimal "$diskDrive" --script mkpart primary 1000MB 100%
 
 mkfs.fat -F 32 "$diskDrive$partitionEFI"
@@ -117,8 +118,8 @@ pacman -S --noconfirm intel-ucode
 
 echo \"******************** installing grub\"
 # install grub
-pacman -S --noconfirm grub
-grub-install --target=x86-pc
+pacman -S --noconfirm grub efibootmgr
+grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 
 exit"
