@@ -106,6 +106,7 @@ echo \"$rootPassword\" | passwd --stdin
 echo \"******************** configuring mkinitcpio\"
 # configure mkinitcpio.conf
 sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
+mkinitcpio -P
 
 echo \"******************** configuring network\"
 # network configuration
