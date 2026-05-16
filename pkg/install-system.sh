@@ -94,50 +94,51 @@ pacstrap -K /mnt base linux linux-firmware vim wget networkmanager dnsmasq wpa_s
 genfstab -U /mnt >> /mnt/etc/fstab
 
 echo "******************** chrooting to new environment"
-arch-chroot /mnt bash -c "
+cat << EOF | arch-chroot /mnt
 
-echo \"******************** setting timezone\"
+echo "******************** setting timezone"
 # setup timezone
 ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
 hwclock --systohc
 
 # locale-gen
 sed -i 's/#en_US.UTF-8/en_US.UTF-8/g' /etc/locale.gen
-echo \"LANG=en_US.UTF-8\" > /etc/locale.conf
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
-echo \"******************** configuring host\"
+echo "******************** configuring host"
 # hostname configuration
-echo \"$hostname\" > /etc/hostname
-echo \"127.0.1.1 $hostname.localdomain $hostname\" >> /etc/hosts
+echo "$hostname" > /etc/hostname
+echo "127.0.1.1 $hostname.localdomain $hostname" >> /etc/hosts
 
-echo \"******************** setting initial root password\"
+echo "******************** setting initial root password"
 # set root password
-echo \"$rootPassword\" | passwd --stdin
+echo "$rootPassword" | passwd --stdin
 
-echo \"******************** configuring network\"
+echo "******************** configuring network"
 # network configuration
-echo \"[main]`\n`dns=dnsmasq\" > /etc/NetworkManager/conf.d/dns.conf
-echo \"cache-size=2000\" > /etc/NetworkManager/dnsmasq.d/cache.conf
+echo "[main]\ndns=dnsmasq" > /etc/NetworkManager/conf.d/dns.conf
+echo "cache-size=2000" > /etc/NetworkManager/dnsmasq.d/cache.conf
 
-echo \"******************** installing intel microcode\"
+echo "******************** installing intel microcode"
 # install intel microcode
 pacman -S --noconfirm intel-ucode
 
-echo \"******************** configuring mkinitcpio\"
+echo "******************** configuring mkinitcpio"
 # configure mkinitcpio.conf
 sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
 mkinitcpio -P
 
-efibootmgr --create --disk /dev/nvme0n1 --part 1 --label \"Arch Linux GRUB\" --loader \"\\EFI\\GRUB\\grubx64.efi\"
+efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Arch Linux GRUB" --loader "\\EFI\\GRUB\\grubx64.efi"
 
-echo \"******************** installing grub\"
+echo "******************** installing grub"
 # install grub
 pacman -S --noconfirm grub efibootmgr dosfstools mtools memtest86+
-sed -i 's/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\`blkid -s UUID -o value $diskDrive$partitionRoot\`=root rootflags=subvol=@ rw\"/' /etc/default/grub
+sed -i "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\$(blkid -s UUID -o value $diskDrive$partitionRoot)=root rootflags=subvol=@ rw\"/" /etc/default/grub
 sed -i 's/#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/' /etc/default/grub
 grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
-exit"
+exit
+EOF
 echo "******************** all done"
 exit
 
