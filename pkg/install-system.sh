@@ -135,8 +135,8 @@ echo \"******************** installing grub\"
 pacman -S --noconfirm grub efibootmgr dosfstools mtools memtest86+
 rootUUID=\$(blkid -s UUID -o value $diskDrive$PartitionRoot)
 echo \"UUID: \$rootUUID\"
-sed -i \"s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\$rootUUID=root rootflags=subvol=@ rw\"/\" /etc/default/grub
-set -i \"s/#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/\" /etc/default/grub
+sed -i 's/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\$rootUUID=root rootflags=subvol=@ rw\"/' /etc/default/grub
+sed -i 's/#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/' /etc/default/grub
 grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 exit"
