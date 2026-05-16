@@ -32,7 +32,7 @@ parted "$diskDrive" --script set 1 boot on
 parted "$diskDrive" --script set 1 bios_grub on
 parted -a optimal "$diskDrive" --script mkpart primary 1000MB 100%
 
-mkfs.fat -F 32 "$diskDrive$partitionEFI"
+mkfs.fat -F 32 -n EFI "$diskDrive$partitionEFI"
 
 echo "******************** Encrypting disk"
 # create file-based password
@@ -53,6 +53,7 @@ mkfs.btrfs /dev/mapper/root
 mount /dev/mapper/root /mnt
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@snapshots
 btrfs subvolume create /mnt/@swap
 
 echo "******************** mounting root"
@@ -61,13 +62,21 @@ umount /mnt
 mount -o subvol=@ /dev/mapper/root /mnt
 mkdir -p /mnt/home
 mkdir -p /mnt/swap
+mkdir -p /mnt/.snapshots
 mount -o subvol=@home /dev/mapper/root /mnt/home
+mount -o subvol=@snapshots /dev/mapper/root /mnt/.snapshots
 mount -o subvol=@swap /dev/mapper/root /mnt/swap
 
 echo "******************** mounting EFI"
 # mount EFI partition
 mkdir -p /mnt/efi
 mount "$diskDrive$partitionEFI" /mnt/efi
+
+echo "******************** setting swap file"
+btrfs filesystem mkswapfile --size 20G /mnt/swap/swapfile
+chmod 600 /mnt/swap/swapfile
+mkswap /mnt/swap/swapfile
+swapon /mnt/swap/swapfile
 
 echo "******************** selecting mirrors"
 pacman -Syy
@@ -103,11 +112,6 @@ echo \"******************** setting initial root password\"
 # set root password
 echo \"$rootPassword\" | passwd --stdin
 
-echo \"******************** configuring mkinitcpio\"
-# configure mkinitcpio.conf
-sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
-mkinitcpio -P
-
 echo \"******************** configuring network\"
 # network configuration
 echo \"[main]\ndns=dnsmasq\" > /etc/NetworkManager/conf.d/dns.conf
@@ -116,6 +120,13 @@ echo \"cache-size=2000\" > /etc/NetworkManager/dnsmasq.d/cache.conf
 echo \"******************** installing intel microcode\"
 # install intel microcode
 pacman -S --noconfirm intel-ucode
+
+echo \"******************** configuring mkinitcpio\"
+# configure mkinitcpio.conf
+sed -i '/^#/! s/filesystems/sd-encrypt &/g' /etc/mkinitcpio.conf
+mkinitcpio -P
+
+efibootmgr --create --disk /dev/nvme0n1 --part 1 --label \"Arch Linux GRUB\" --loader \"\\EFI\\GRUB\\grubx64.efi\"
 
 echo \"******************** installing grub\"
 # install grub
