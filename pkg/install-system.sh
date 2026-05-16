@@ -116,7 +116,7 @@ echo "$rootPassword" | passwd --stdin
 
 echo "******************** configuring network"
 # network configuration
-echo "[main]\ndns=dnsmasq" > /etc/NetworkManager/conf.d/dns.conf
+echo -e "[main]\ndns=dnsmasq" > /etc/NetworkManager/conf.d/dns.conf
 echo "cache-size=2000" > /etc/NetworkManager/dnsmasq.d/cache.conf
 
 echo "******************** installing intel microcode"
