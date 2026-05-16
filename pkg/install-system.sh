@@ -134,8 +134,8 @@ echo \"******************** installing grub\"
 # install grub
 pacman -S --noconfirm grub efibootmgr dosfstools mtools memtest86+
 grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
-sed -i \"s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\$(blkid -s UUID -o value $diskDrive$partitionRoot)=root rootflags=subvol=@ rw\"/\"
-set -i \"s/#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/\"
+sed -i \"s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\$(blkid -s UUID -o value $diskDrive$partitionRoot)=root rootflags=subvol=@ rw\"/\" /etc/default/grub
+set -i \"s/#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/\" /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg
 exit"
 echo "******************** all done"
