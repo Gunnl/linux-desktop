@@ -67,6 +67,8 @@ mount -o subvol=@home /dev/mapper/root /mnt/home
 mount -o subvol=@snapshots /dev/mapper/root /mnt/.snapshots
 mount -o subvol=@swap /dev/mapper/root /mnt/swap
 
+rootUUID="$(blkid -s UUID -o value $diskDrive$partitionRoot)"
+
 echo "******************** mounting EFI"
 # mount EFI partition
 mkdir -p /mnt/efi
@@ -114,7 +116,7 @@ echo \"$rootPassword\" | passwd --stdin
 
 echo \"******************** configuring network\"
 # network configuration
-echo \"[main]\ndns=dnsmasq\" > /etc/NetworkManager/conf.d/dns.conf
+echo \"[main]`\n`dns=dnsmasq\" > /etc/NetworkManager/conf.d/dns.conf
 echo \"cache-size=2000\" > /etc/NetworkManager/dnsmasq.d/cache.conf
 
 echo \"******************** installing intel microcode\"
@@ -130,10 +132,11 @@ efibootmgr --create --disk /dev/nvme0n1 --part 1 --label \"Arch Linux GRUB\" --l
 
 echo \"******************** installing grub\"
 # install grub
-pacman -S --noconfirm grub efibootmgr
+pacman -S --noconfirm grub efibootmgr dosfstools mtools memtest86+
 grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
+sed -i \"s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"rd.luks.name=\$(blkid -s UUID -o value $diskDrive$partitionRoot)=root rootflags=subvol=@ rw\"/\"
+set -i \"s/#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/\"
 grub-mkconfig -o /boot/grub/grub.cfg
-
 exit"
 echo "******************** all done"
 exit
